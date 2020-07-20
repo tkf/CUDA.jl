@@ -51,7 +51,8 @@ function library_versioned_names(name::String, version::Union{Nothing,VersionNum
     elseif Sys.isunix()
         # most UNIX distributions ship versioned libraries (also see JuliaLang/julia#22828)
         if version isa VersionNumber
-            append!(names, ["lib$(name).$(Libdl.dlext).$(version.major).$(version.minor)",
+            append!(names, ["lib$(name).$(Libdl.dlext).$(version.major).$(version.minor).$(version.patch)",
+                            "lib$(name).$(Libdl.dlext).$(version.major).$(version.minor)",
                             "lib$(name).$(Libdl.dlext).$(version.major)"])
         elseif version isa String
             push!(names, "lib$(name).$(Libdl.dlext).$(version)")
@@ -169,6 +170,9 @@ const cuda_library_versions = Dict(
         "cufft"     => v"10.1.3", #.191
         "curand"    => v"10.2.0", #.191
         "cusolver"  => v"10.4.0", #.191
+        "cudalibmg" => v"11.0.0", #.191
+        "cublasmg"  => v"11.0.0", #.191
+        "cusolverMg"=> v"11.0.0", #.191
         "cusparse"  => v"11.0.0", #.191
         "npp"       => v"11.0.0", #.191
         "nvjpeg"    => v"11.0.0", #.191
@@ -180,9 +184,12 @@ const cuda_library_versions = Dict(
         "nvtx"      => v"11.0.167",
         "nvvp"      => v"11.0.167",
         "cublas"    => v"11.0.0", #.191
+        "cudalibmg" => v"11.0.0", #.191
+        "cublasmg"  => v"11.0.0", #.191
         "cufft"     => v"10.1.3", #.191
         "curand"    => v"10.2.0", #.191
         "cusolver"  => v"10.4.0", #.191
+        "cusolverMg"=> v"11.0.0", #.191
         "cusparse"  => v"11.0.0", #.191
         "npp"       => v"11.0.0", #.191
         "nvjpeg"    => v"11.0.0", #.191
@@ -197,6 +204,7 @@ const cuda_library_versions = Dict(
         "cufft"     => v"10.2.1", #.245
         "curand"    => v"10.2.1", #.245
         "cusolver"  => v"10.6.0", #.245
+        "cusolverMg" => v"10.6.0", #.245
         "cusparse"  => v"11.1.1", #.245
         "npp"       => v"11.1.0", #.245
         "nvjpeg"    => v"11.1.1", #.245
@@ -211,6 +219,7 @@ const cuda_library_versions = Dict(
         "cufft"     => v"10.3.0", #.74
         "curand"    => v"10.2.2", #.74
         "cusolver"  => v"11.0.0", #.74
+        "cusolverMg"  => v"11.0.0", #.74
         "cusparse"  => v"11.2.0", #.275
         "npp"       => v"11.1.1", #.269
         "nvjpeg"    => v"11.2.0", #.74
@@ -226,6 +235,7 @@ const cuda_library_versions = Dict(
         "curand"    => v"10.2.2", #.105
         "cusolver"  => v"11.0.1", #.105
         "cusparse"  => v"11.3.0", #.10
+        "cusolverMg"  => v"11.0.1", #.105
         "npp"       => v"11.1.2", #.105
         "nvjpeg"    => v"11.3.0", #.105
     ),
@@ -239,6 +249,7 @@ const cuda_library_versions = Dict(
         "cufft"     => v"10.4.0", #.72
         "curand"    => v"10.2.3", #.68
         "cusolver"  => v"11.0.2", #.68
+        "cusolverMg"  => v"11.0.2", #.68
         "cusparse"  => v"11.3.1", #.68
         "npp"       => v"11.2.1", #.68
         "nvjpeg"    => v"11.3.1", #.68
@@ -253,6 +264,7 @@ const cuda_library_versions = Dict(
         "cufft"     => v"10.4.0", #.135
         "curand"    => v"10.2.3", #.135
         "cusolver"  => v"11.1.0", #.135
+        "cusolverMg"  => v"11.1.0", #.135
         "cusparse"  => v"11.4.0", #.135
         "npp"       => v"11.3.2", #.139
         "nvjpeg"    => v"11.4.0", #.135

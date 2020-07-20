@@ -43,8 +43,12 @@ const __libcusparse = Ref{String}()
 const __libcusolver = Ref{String}()
 const __libcufft = Ref{String}()
 const __libcurand = Ref{String}()
+const __libcudart = Ref{String}()
 const __libcudnn = Ref{Union{Nothing,String}}(nothing)
 const __libcutensor = Ref{Union{Nothing,String}}(nothing)
+const __libcublasmg = Ref{Union{Nothing,String}}(nothing)
+const __libcudalibmg = Ref{Union{Nothing,String}}(nothing)
+const __libcusolverMg = Ref{Union{Nothing,String}}(nothing)
 
 nvdisasm() = @after_init(__nvdisasm[])
 function memcheck()
@@ -71,13 +75,14 @@ end
 export has_memcheck, has_cupti, has_nvtx
 has_memcheck() = @after_init(__memcheck[]) !== nothing
 has_cupti() = @after_init(__libcupti[]) !== nothing
-has_nvtx() = @after_init(__libnvtx[]) !== nothing
+has_nvtx()  = @after_init(__libnvtx[]) !== nothing
 
-libcublas() = @after_init(__libcublas[])
+libcudart()   = @after_init(__libcudart[])
+libcublas()   = @after_init(__libcublas[])
 libcusparse() = @after_init(__libcusparse[])
 libcusolver() = @after_init(__libcusolver[])
-libcufft() = @after_init(__libcufft[])
-libcurand() = @after_init(__libcurand[])
+libcufft()    = @after_init(__libcufft[])
+libcurand()   = @after_init(__libcurand[])
 function libcudnn()
     @after_init begin
         @assert has_cudnn() "This functionality is unavailabe as CUDNN is missing."
@@ -90,10 +95,31 @@ function libcutensor()
         __libcutensor[]
     end
 end
+function libcublasmg()
+    @after_init begin
+        @assert has_cublasmg() "This functionality is unavailabe as CUBLASMG is missing."
+        __libcublasmg[]
+    end
+end
+function libcusolvermg()
+    @after_init begin
+        @assert has_cusolvermg() "This functionality is unavailabe as CUSOLVERMG is missing."
+        __libcusolverMg[]
+    end
+end
+function libcudalibmg()
+    @after_init begin
+        @assert has_cudalibmg() "This functionality is unavailabe as CUDALIBMG is missing."
+        __libcudalibmg[]
+    end
+end
 
-export has_cudnn, has_cutensor
+export has_cudnn, has_cutensor, has_cublasmg, has_cudalibmg, has_cusolvermg
 has_cudnn() = @after_init(__libcudnn[]) !== nothing
 has_cutensor() = @after_init(__libcutensor[]) !== nothing
+has_cublasmg() = @after_init(__libcublasmg[]) !== nothing
+has_cusolvermg() = @after_init(__libcusolverMg[]) !== nothing
+has_cudalibmg() = @after_init(__libcudalibmg[]) !== nothing
 
 
 ## discovery
@@ -194,7 +220,12 @@ function use_artifact_cuda()
         Libdl.dlopen(path)
     end
 
-    for library in ("cublas", "cusparse", "cusolver", "cufft", "curand")
+    if CUDA.toolkit_version() >= v"10.1"
+        lib_list =  ("cublas", "cusparse", "cusolver", "cufft", "curand", "cudart", "cusolverMg")
+    else
+        lib_list =  ("cublas", "cusparse", "cusolver", "cufft", "curand", "cudart")
+    end
+    for library in lib_list 
         handle = getfield(CUDA, Symbol("__lib$library"))
 
         handle[] = artifact_cuda_library(artifact.dir, library, artifact.version)
@@ -212,7 +243,6 @@ function use_local_cuda()
     @debug "Trying to use local installation..."
 
     cuda_dirs = find_toolkit()
-
     let path = find_cuda_binary("nvdisasm", cuda_dirs)
         if path === nothing
             @debug "Could not find nvdisasm"
@@ -268,10 +298,22 @@ function use_local_cuda()
         end
         __libdevice[] = path
     end
+
+    for library in ("cublas", "cusparse", "cusolver", "cufft", "curand", "cusolverMg")
+        handle = getfield(CUDA, Symbol("__lib$library"))
+        path = find_cuda_library(library, cuda_dirs, cuda_version)
+        if path === nothing
+            @debug "Could not find $library"
+            return false
+        end
+        handle[] = path
+    end
     @debug "Found local CUDA $(cuda_version) at $(join(cuda_dirs, ", "))"
     __toolkit_origin[] = :local
     use_local_cudnn(cuda_dirs)
     use_local_cutensor(cuda_dirs)
+    use_local_cudalibmg(cuda_dirs)
+    use_local_cublasmg(cuda_dirs)
     return true
 end
 
@@ -374,6 +416,41 @@ function use_local_cutensor(cuda_dirs)
 
     __libcutensor[] = path
     @debug "Using local CUTENSOR at $(path)"
+    return true
+end
+
+# CUBLASMG
+function use_local_cublasmg(cuda_dirs)
+    cdirs = copy(cuda_dirs)
+    if haskey(ENV, "LD_LIBRARY_PATH")
+        let ldpath = ENV["LD_LIBRARY_PATH"]
+            dirs = split(ldpath, Sys.iswindows() ? ';' : ':')
+            filter!(ldpath->!isempty(ldpath), dirs)
+            append!(cdirs, dirs)
+        end
+    end
+    path = find_library("cublasMg"; locations=cdirs)
+    path === nothing && return false
+
+    __libcublasmg[] = path
+    @debug "Using local CUBLASMG at $(path)"
+    return true
+end
+
+function use_local_cudalibmg(cuda_dirs)
+    cdirs = copy(cuda_dirs)
+    if haskey(ENV, "LD_LIBRARY_PATH")
+        let ldpath = ENV["LD_LIBRARY_PATH"]
+            dirs = split(ldpath, Sys.iswindows() ? ';' : ':')
+            filter!(ldpath->!isempty(ldpath), dirs)
+            append!(cdirs, dirs)
+        end
+    end
+    path = find_library("cudalibmg"; locations=cdirs)
+    path === nothing && return false
+
+    __libcudalibmg[] = path
+    @debug "Using local CUDALIBMG at $(path)"
     return true
 end
 
