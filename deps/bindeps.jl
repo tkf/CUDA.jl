@@ -46,7 +46,6 @@ const __libcurand = Ref{String}()
 const __libcudart = Ref{String}()
 const __libcudnn = Ref{Union{Nothing,String}}(nothing)
 const __libcutensor = Ref{Union{Nothing,String}}(nothing)
-const __libcublasmg = Ref{Union{Nothing,String}}(nothing)
 const __libcudalibmg = Ref{Union{Nothing,String}}(nothing)
 const __libcusolverMg = Ref{Union{Nothing,String}}(nothing)
 
@@ -95,12 +94,6 @@ function libcutensor()
         __libcutensor[]
     end
 end
-function libcublasmg()
-    @after_init begin
-        @assert has_cublasmg() "This functionality is unavailabe as CUBLASMG is missing."
-        __libcublasmg[]
-    end
-end
 function libcusolvermg()
     @after_init begin
         @assert has_cusolvermg() "This functionality is unavailabe as CUSOLVERMG is missing."
@@ -114,10 +107,9 @@ function libcudalibmg()
     end
 end
 
-export has_cudnn, has_cutensor, has_cublasmg, has_cudalibmg, has_cusolvermg
+export has_cudnn, has_cutensor, has_cudalibmg, has_cusolvermg
 has_cudnn() = @after_init(__libcudnn[]) !== nothing
 has_cutensor() = @after_init(__libcutensor[]) !== nothing
-has_cublasmg() = @after_init(__libcublasmg[]) !== nothing
 has_cusolvermg() = @after_init(__libcusolverMg[]) !== nothing
 has_cudalibmg() = @after_init(__libcudalibmg[]) !== nothing
 
@@ -313,7 +305,6 @@ function use_local_cuda()
     use_local_cudnn(cuda_dirs)
     use_local_cutensor(cuda_dirs)
     use_local_cudalibmg(cuda_dirs)
-    use_local_cublasmg(cuda_dirs)
     return true
 end
 
@@ -416,24 +407,6 @@ function use_local_cutensor(cuda_dirs)
 
     __libcutensor[] = path
     @debug "Using local CUTENSOR at $(path)"
-    return true
-end
-
-# CUBLASMG
-function use_local_cublasmg(cuda_dirs)
-    cdirs = copy(cuda_dirs)
-    if haskey(ENV, "LD_LIBRARY_PATH")
-        let ldpath = ENV["LD_LIBRARY_PATH"]
-            dirs = split(ldpath, Sys.iswindows() ? ';' : ':')
-            filter!(ldpath->!isempty(ldpath), dirs)
-            append!(cdirs, dirs)
-        end
-    end
-    path = find_library("cublasMg"; locations=cdirs)
-    path === nothing && return false
-
-    __libcublasmg[] = path
-    @debug "Using local CUBLASMG at $(path)"
     return true
 end
 

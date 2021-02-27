@@ -76,12 +76,7 @@ for (rootpath, dirs, files) in walkdir(@__DIR__)
 
   append!(tests, files)
   for file in files
-    #if !occursin(file, "blasmg")
-        test_runners[file] = ()->include("$(@__DIR__)/$file.jl")
-    #else
-    #    str = "$(@__DIR__)/$file.jl"
-    #    test_runners[file] = run(pipeline(`$(Base.julia_cmd()) --project $str`; stdout = stdout, stderr = stderr), wait = false)
-    #end
+    test_runners[file] = ()->include("$(@__DIR__)/$file.jl")
   end
 end
 ## GPUArrays testsuite
